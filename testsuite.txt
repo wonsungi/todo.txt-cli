@@ -1,0 +1,324 @@
+This file is intended to be processed by python doctest
+cf http://en.wikipedia.org/wiki/Doctest
+
+!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!
+You've maybe to configure this line according to your setup.
+You've to use a special todo.cfg as it will *DELETE* the files before running the tests!
+    >>> TODO="todo.sh -d $(pwd)/testsuite.cfg"
+
+Don't modify those lines:
+    >>> import os
+    >>> def bash(commandstring):
+    ...     print os.popen(commandstring).read()
+    >>> def todo(args=''):
+    ...     bash(TODO + ' ' + args)
+
+Let's clean a bit as it was told to you a second ago.
+    >>> bash('rm -f deleteme_*')
+
+The syntax to create a test is the following.
+It's very important to let one empty line after the intended output!
+Note that "..." in the output is a catchall (think regexp ".*")
+    >>> bash('echo "test bla bla bla end\nwhy not a second line"')
+    test...end
+    why not a second line
+
+Here are the regression tests for todo.sh
+
+Default:
+    >>> todo()
+    Usage: todo.sh  [-fhpantvV] [-d todo_config] action [task_number] [task_description]
+    Try 'todo.sh -h' for more information.
+
+Add:
+    >>> todo('add "notice the daisies"')
+    TODO: 'notice the daisies' added on line 1.
+    >>> todo('list')
+    1 notice the daisies
+    --
+    TODO: 1 of 1 tasks shown ...todo.txt
+
+Replace:
+    >>> todo('replace adf asdfa')
+    usage: ...todo.sh replace ITEM# "UPDATED ITEM"
+
+    >>> todo('replace 1 "smell the cows"')
+    replaced with
+    1: smell the cows
+    >>> todo('list')
+    1 smell the cows
+    --
+    TODO: 1 of 1 tasks shown ...todo.txt
+
+    >>> todo('replace 1 smell the roses')
+    replaced with
+    1: smell the roses
+    >>> todo('list')
+    1 smell the roses
+    --
+    TODO: 1 of 1 tasks shown from ...todo.txt
+
+    >>> todo('replace 1 smell the uppercase Roses')
+    replaced with
+    1: smell the uppercase Roses
+    >>> todo('list')
+    1 smell the uppercase Roses
+    --
+    TODO: 1 of 1 tasks shown from ...todo.txt
+
+    >>> todo('list roses')
+    1 smell the uppercase Roses
+    --
+    TODO: 1 of 1 tasks shown from ...todo.txt
+
+    >>> todo('add notice the sunflowers')
+    TODO: 'notice the sunflowers' added on line 2.
+    >>> todo('list')
+    2 notice the sunflowers
+    1 smell the uppercase Roses
+    --
+    TODO: 2 of 2 tasks shown from ...todo.txt
+
+Append:
+    >>> todo('append 1 +flowers @outside')
+    1: smell the uppercase Roses +flowers @outside
+    >>> todo('list')
+    2 notice the sunflowers
+    1 smell the uppercase Roses +flowers @outside
+    --
+    TODO: 2 of 2 tasks shown from ...todo.txt
+
+    >>> todo('add "stop"')
+    TODO: 'stop' added on line 3.
+    >>> todo('list')
+    2 notice the sunflowers
+    1 smell the uppercase Roses +flowers @outside
+    3 stop
+    --
+    TODO: 3 of 3 tasks shown from ...todo.txt
+
+Pri:
+    >>> todo('pri B B')
+    usage: ...todo.sh pri ITEM# PRIORITY
+    note:  PRIORITY must be anywhere from A to Z.
+
+    >>> todo('pri 1 B')
+    1: (B) smell the uppercase Roses +flowers @outside
+    TODO: 1 prioritized (B).
+    >>> todo('list')
+    [0;32m1 (B) smell the uppercase Roses +flowers @outside [0m
+    2 notice the sunflowers
+    3 stop
+    --
+    TODO: 3 of 3 tasks shown from ...todo.txt
+
+    >>> todo('-p list')
+    1 (B) smell the uppercase Roses +flowers @outside 
+    2 notice the sunflowers
+    3 stop
+    --
+    TODO: 3 of 3 tasks shown from ...todo.txt
+
+    >>> todo('pri 2 C')
+    2: (C) notice the sunflowers
+    TODO: 2 prioritized (C).
+    >>> todo('-p list')
+    1 (B) smell the uppercase Roses +flowers @outside 
+    2 (C) notice the sunflowers 
+    3 stop
+    --
+    TODO: 3 of 3 tasks shown from ...todo.txt
+
+    >>> todo('pri 2 A')
+    2: (A) notice the sunflowers
+    TODO: 2 prioritized (A).
+    >>> todo('-p list')
+    2 (A) notice the sunflowers 
+    1 (B) smell the uppercase Roses +flowers @outside 
+    3 stop
+    --
+    TODO: 3 of 3 tasks shown from ...todo.txt
+
+    >>> todo('pri 2 a')
+    2: (A) notice the sunflowers
+    TODO: 2 prioritized (A).
+    >>> todo('-p listpri')
+    2 (A) notice the sunflowers
+    1 (B) smell the uppercase Roses +flowers @outside
+    --
+    TODO: 2 of 3 tasks shown from ...todo.txt
+
+    >>> todo('add "smell the coffee +wakeup"')
+    TODO: 'smell the coffee +wakeup' added on line 4.
+    >>> todo('-p list')
+    2 (A) notice the sunflowers 
+    1 (B) smell the uppercase Roses +flowers @outside 
+    4 smell the coffee +wakeup
+    3 stop
+    --
+    TODO: 4 of 4 tasks shown from ...todo.txt
+
+    >>> todo('-p list +flowers')
+    1 (B) smell the uppercase Roses +flowers @outside 
+    --
+    TODO: 1 of 4 tasks shown from ...todo.txt
+
+    >>> todo('-p list flowers')
+    2 (A) notice the sunflowers 
+    1 (B) smell the uppercase Roses +flowers @outside 
+    --
+    TODO: 2 of 4 tasks shown from ...todo.txt
+
+    >>> todo('-p list flowers out')
+    1 (B) smell the uppercase Roses +flowers @outside 
+    --
+    TODO: 1 of 4 tasks shown from ...todo.txt
+
+Do:
+    >>> todo('-a do 2')
+    2: x ... notice the sunflowers
+    TODO: 2 marked as done.
+    >>> todo('-p list')
+    1 (B) smell the uppercase Roses +flowers @outside 
+    4 smell the coffee +wakeup
+    3 stop
+    2 x ... notice the sunflowers
+    --
+    TODO: 4 of 4 tasks shown from ...todo.txt
+
+    >>> todo('add "make the coffee +wakeup"')
+    TODO: 'make the coffee +wakeup' added on line 5.
+    >>> todo('-p list coffee')
+    5 make the coffee +wakeup
+    4 smell the coffee +wakeup
+    --
+    TODO: 2 of 5 tasks shown ...todo.txt
+
+    >>> todo('add "visit http://example.com"')
+    TODO: 'visit http://example.com' added on line 6.
+
+    >>> todo('-p list')
+    1 (B) smell the uppercase Roses +flowers @outside 
+    5 make the coffee +wakeup
+    4 smell the coffee +wakeup
+    3 stop
+    6 visit http://example.com
+    2 x ... notice the sunflowers
+    --
+    TODO: 6 of 6 tasks shown from ...todo.txt
+
+Archive:
+    >>> todo('archive')
+    x ...notice the sunflowers
+    TODO:  ...todo.txt archived.
+    >>> todo('-p list')
+    1 (B) smell the uppercase Roses +flowers @outside 
+    4 make the coffee +wakeup
+    3 smell the coffee +wakeup
+    2 stop
+    5 visit http://example.com
+    --
+    TODO: 5 of 5 tasks shown from ...todo.txt
+
+Report:
+    >>> todo('report')
+    TODO:  Report file updated.
+    20...-...-...-...:...:... 5 1
+
+    >>> todo('report')
+    TODO:  Report file updated.
+    20...-...-...-...:...:... 5 1
+    20...-...-...-...:...:... 5 1
+
+Misc:
+    >>> todo('append g a')
+    usage: ...todo.sh append ITEM# "TEXT TO APPEND"
+    >>> todo('append 2 and think')
+    2: stop and think
+
+    >>> todo('-p list')
+    1 (B) smell the uppercase Roses +flowers @outside 
+    4 make the coffee +wakeup
+    3 smell the coffee +wakeup
+    2 stop and think
+    5 visit http://example.com
+    --
+    TODO: 5 of 5 tasks shown from ...todo.txt
+
+    >>> todo('pri 2 C')
+    2: (C) stop and think
+    TODO: 2 prioritized (C).
+    >>> todo('replace 10 "hej!"')
+    10:  No such todo.
+
+    >>> todo('-p list')
+    1 (B) smell the uppercase Roses +flowers @outside 
+    2 (C) stop and think 
+    4 make the coffee +wakeup
+    3 smell the coffee +wakeup
+    5 visit http://example.com
+    --
+    TODO: 5 of 5 tasks shown from ...todo.txt
+
+    >>> todo('append 10 "hej!"')
+    10:  No such todo.
+    >>> todo('-p list')
+    1 (B) smell the uppercase Roses +flowers @outside 
+    2 (C) stop and think 
+    4 make the coffee +wakeup
+    3 smell the coffee +wakeup
+    5 visit http://example.com
+    --
+    TODO: 5 of 5 tasks shown from ...todo.txt
+
+    >>> todo('do 10')
+    10:  No such todo.
+    >>> todo('-p list')
+    1 (B) smell the uppercase Roses +flowers @outside 
+    2 (C) stop and think 
+    4 make the coffee +wakeup
+    3 smell the coffee +wakeup
+    5 visit http://example.com
+    --
+    TODO: 5 of 5 tasks shown from ...todo.txt
+
+    >>> todo('add "the coffee +wakeup"')
+    TODO: 'the coffee +wakeup' added on line 6.
+    >>> todo('-p list')
+    1 (B) smell the uppercase Roses +flowers @outside 
+    2 (C) stop and think 
+    4 make the coffee +wakeup
+    3 smell the coffee +wakeup
+    6 the coffee +wakeup
+    5 visit http://example.com
+    --
+    TODO: 6 of 6 tasks shown from ...todo.txt
+
+    >>> todo('prepend 6 "make"')
+    6: make the coffee +wakeup
+    >>> todo('-p list')
+    1 (B) smell the uppercase Roses +flowers @outside 
+    2 (C) stop and think 
+    4 make the coffee +wakeup
+    6 make the coffee +wakeup
+    3 smell the coffee +wakeup
+    5 visit http://example.com
+    --
+    TODO: 6 of 6 tasks shown from ...todo.txt
+
+    >>> todo('remdup')
+    Usage: todo.sh  [-fhpantvV] [-d todo_config] action [task_number] [task_description]
+    Try 'todo.sh -h' for more information.
+    >>> todo('-p list')
+    1 (B) smell the uppercase Roses +flowers @outside 
+    2 (C) stop and think 
+    4 make the coffee +wakeup
+    6 make the coffee +wakeup
+    3 smell the coffee +wakeup
+    5 visit http://example.com
+    --
+    TODO: 6 of 6 tasks shown from ...todo.txt
+
+Cleaning again
+    >>> bash('rm -f deleteme_*')
+
